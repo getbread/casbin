@@ -72,7 +72,8 @@ func NewEnforcer(params ...interface{}) *Enforcer {
 				e.InitWithAdapter(params[0].(string), params[1].(persist.Adapter))
 			}
 		} else {
-			if reflect.TypeOf(params[1]).Kind() == reflect.String {
+			_, isAdapter := params[1].(persist.Adapter)
+			if !isAdapter && reflect.TypeOf(params[1]).Kind() == reflect.String {
 				panic("Invalid parameters for enforcer.")
 			} else {
 				e.InitWithModelAndAdapter(params[0].(model.Model), params[1].(persist.Adapter))
