@@ -31,14 +31,14 @@ import (
 
 // Enforcer is the main interface for authorization enforcement and policy management.
 type Enforcer struct {
-	modelPath          string
-	model              model.Model
-	fm                 model.FunctionMap
-	eft                effect.Effector
+	modelPath string
+	model     model.Model
+	fm        model.FunctionMap
+	eft       effect.Effector
 
-	adapter            persist.Adapter
-	watcher            persist.Watcher
-	rm                 rbac.RoleManager
+	adapter persist.Adapter
+	watcher persist.Watcher
+	rm      rbac.RoleManager
 
 	enabled            bool
 	autoSave           bool
@@ -192,7 +192,7 @@ func (e *Enforcer) SetAdapter(adapter persist.Adapter) {
 // SetWatcher sets the current watcher.
 func (e *Enforcer) SetWatcher(watcher persist.Watcher) {
 	e.watcher = watcher
-	watcher.SetUpdateCallback(func (string) {e.LoadPolicy()})
+	watcher.SetUpdateCallback(func(string) { e.LoadPolicy() })
 }
 
 // SetRoleManager sets the current role manager.
