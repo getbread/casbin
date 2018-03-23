@@ -21,6 +21,12 @@ func (e *SyncedEnforcer) GetRolesForUser(name string) []string {
 	return e.Enforcer.GetRolesForUser(name)
 }
 
+func (e *SyncedEnforcer) GetAllTransitiveRolesForUser(name string) []string {
+	e.m.Lock()
+	defer e.m.Unlock()
+	return e.Enforcer.GetAllTransitiveRolesForUser(name)
+}
+
 // GetUsersForRole gets the users that has a role.
 func (e *SyncedEnforcer) GetUsersForRole(name string) []string {
 	e.m.Lock()
