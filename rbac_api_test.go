@@ -51,6 +51,23 @@ func testHasRole(t *testing.T, e *Enforcer, name string, role string, res bool) 
 	}
 }
 
+func TestGetRolesForUserTransitivity(t *testing.T) {
+	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
+
+	// expect GetRolesForUser() to be non-transitive
+	e.AddRoleForUser("developers", "pizza-eaters")
+	testGetRoles(t, e, "fred", []string{""})
+	testEnforce(t, e, "fred", "pizza", "eat", false)
+	e.AddRoleForUser("fred", "developers")
+	// Here we see that fred transitively has the role
+	// "pizza-eaters", however GetRolesForUser("fred") excludes
+	// "pizza-eaters" because it returns only fred's direct roles.
+	testGetRoles(t, e, "fred", []string{"developers"})
+	testEnforce(t, e, "fred", "pizza", "eat", true)
+	e.RemoveRoleForUser("developers", "pizza-eaters")
+	testEnforce(t, e, "fred", "pizza", "eat", false)
+}
+
 func TestRoleAPI(t *testing.T) {
 	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
 
@@ -108,19 +125,6 @@ func TestRoleAPI(t *testing.T) {
 	testEnforce(t, e, "bob", "data1", "write", false)
 	testEnforce(t, e, "bob", "data2", "read", false)
 	testEnforce(t, e, "bob", "data2", "write", true)
-
-	// Test that GetRolesForUser() is non-transitive
-	e.AddRoleForUser("developers", "pizza-eaters")
-	testGetRoles(t, e, "fred", []string{""})
-	testEnforce(t, e, "fred", "pizza", "eat", false)
-	e.AddRoleForUser("fred", "developers")
-	// Here we see that fred transitively has the role
-	// "pizza-eaters", however GetRolesForUser("fred") excludes
-	// "pizza-eaters" because it returns only fred's direct roles.
-	testGetRoles(t, e, "fred", []string{"developers"})
-	testEnforce(t, e, "fred", "pizza", "eat", true)
-	e.RemoveRoleForUser("developers", "pizza-eaters")
-	testEnforce(t, e, "fred", "pizza", "eat", false)
 }
 
 func testGetPermissions(t *testing.T, e *Enforcer, name string, res [][]string) {
