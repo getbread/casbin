@@ -86,24 +86,6 @@ func TestGetAllTransitiveRolesForUser(t *testing.T) {
 	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters", "european-food-eaters", "admin7"})
 }
 
-func TestGetPermissionsForUserNonTransitivity(t *testing.T) {
-	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
-
-	// expect GetPermissionsForUser() to be non-transitive,
-	// i.e. exclude permissions inherited via roles the user has
-	e.AddPermissionForUser("pizza-eaters", "pizza", "eat")
-	testGetPermissions(t, e, "tim", [][]string{})
-	testEnforce(t, e, "tim", "pizza", "eat", false)
-	e.AddRoleForUser("tim", "pizza-eaters")
-	// Here we see that tim transitively has the permission
-	// ("pizza", "eat"), however GetPermissionsForUser("tim") excludes
-	// ("pizza", "eat") because it returns only tim's direct permissions.
-	testGetPermissions(t, e, "tim", [][]string{})
-	testEnforce(t, e, "tim", "pizza", "eat", true)
-	e.DeletePermissionForUser("pizza-eaters", "pizza", "eat")
-	testEnforce(t, e, "tim", "pizza", "eat", false)
-}
-
 func TestGetRolesForUserNonTransitivity(t *testing.T) {
 	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
 
@@ -201,6 +183,24 @@ func testHasPermission(t *testing.T, e *Enforcer, name string, permission []stri
 	if res != myRes {
 		t.Error(name, " has permission ", util.ArrayToString(permission), ": ", myRes, ", supposed to be ", res)
 	}
+}
+
+func TestGetPermissionsForUserNonTransitivity(t *testing.T) {
+	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
+
+	// expect GetPermissionsForUser() to be non-transitive,
+	// i.e. exclude permissions inherited via roles the user has
+	e.AddPermissionForUser("pizza-eaters", "pizza", "eat")
+	testGetPermissions(t, e, "tim", [][]string{})
+	testEnforce(t, e, "tim", "pizza", "eat", false)
+	e.AddRoleForUser("tim", "pizza-eaters")
+	// Here we see that tim transitively has the permission
+	// ("pizza", "eat"), however GetPermissionsForUser("tim") excludes
+	// ("pizza", "eat") because it returns only tim's direct permissions.
+	testGetPermissions(t, e, "tim", [][]string{})
+	testEnforce(t, e, "tim", "pizza", "eat", true)
+	e.DeletePermissionForUser("pizza-eaters", "pizza", "eat")
+	testEnforce(t, e, "tim", "pizza", "eat", false)
 }
 
 func TestPermissionAPI(t *testing.T) {
