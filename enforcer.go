@@ -196,12 +196,6 @@ func (e *Enforcer) SetWatcher(watcher persist.Watcher) {
 	watcher.SetUpdateCallback(func(string) { e.LoadPolicy() })
 }
 
-// GetRoleManager gets the current role manager. The
-// returned RoleManager is not a copy and is not threadsafe.
-func (e *Enforcer) GetRoleManager() rbac.RoleManager {
-	return e.rm
-}
-
 // SetRoleManager sets the current role manager.
 func (e *Enforcer) SetRoleManager(rm rbac.RoleManager) {
 	e.rm = rm
