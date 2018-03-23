@@ -20,9 +20,9 @@ func (e *Enforcer) GetRolesForUser(name string) []string {
 	return res
 }
 
-// GetAllTransitiveRolesForUser gets the roles that a user has, including roles
-// which the user inherits / has transitively via a "role has another role".
-func (e *Enforcer) GetAllTransitiveRolesForUser(name string) []string {
+// GetAllTransitiveRolesForUserAsSet is like
+// GetAllTransitiveRolesForUser except the result is provided as a "set".
+func (e *Enforcer) GetAllTransitiveRolesForUserAsSet(name string) map[string]struct{} {
 	// i.e. breadth first role search seeded with user's non-transitive roles.
 	rolesQueue := e.GetRolesForUser(name)
 	rolesSet := make(map[string]struct{})
@@ -35,6 +35,13 @@ func (e *Enforcer) GetAllTransitiveRolesForUser(name string) []string {
 			rolesQueue = append(rolesQueue, e.GetRolesForUser(nextRole)...)
 		}
 	}
+	return rolesSet
+}
+
+// GetAllTransitiveRolesForUser gets the roles that a user has, including roles
+// which the user inherits / has transitively via a "role has another role".
+func (e *Enforcer) GetAllTransitiveRolesForUser(name string) []string {
+	rolesSet := e.GetAllTransitiveRolesForUserAsSet(name)
 	roles := make([]string, len(rolesSet))
 	i := 0
 	for r := range rolesSet {
