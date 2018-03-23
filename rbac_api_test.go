@@ -31,6 +31,16 @@ func testGetRoles(t *testing.T, e *Enforcer, name string, res []string) {
 	}
 }
 
+func testGetRolesTransitive(t *testing.T, e *Enforcer, name string, res []string) {
+	t.Helper()
+	myRes := e.GetAllTransitiveRolesForUser(name)
+	log.Print("Transitive roles for ", name, ": ", myRes)
+
+	if !util.SetEquals(res, myRes) {
+		t.Error("Transitive roles for ", name, ": ", myRes, ", supposed to be ", res)
+	}
+}
+
 func testGetUsers(t *testing.T, e *Enforcer, name string, res []string) {
 	t.Helper()
 	myRes := e.GetUsersForRole(name)
@@ -49,6 +59,31 @@ func testHasRole(t *testing.T, e *Enforcer, name string, role string, res bool) 
 	if res != myRes {
 		t.Error(name, " has role ", role, ": ", myRes, ", supposed to be ", res)
 	}
+}
+
+func TestGetAllTransitiveRolesForUser(t *testing.T) {
+	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
+
+	testGetRolesTransitive(t, e, "fred", []string{})
+	e.AddRoleForUser("fred", "pizza-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters"})
+	e.AddRoleForUser("fred", "pasta-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters"})
+	e.DeleteRoleForUser("fred", "pizza-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pasta-eaters"})
+	e.AddRoleForUser("fred", "pizza-eaters")
+	e.AddRoleForUser("pizza-eaters", "italian-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters"})
+	e.AddRoleForUser("italian-eaters", "european-food-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters", "european-food-eaters"})
+	e.AddRoleForUser("italian-eaters", "pizza-eaters") // cycle in graph
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters", "european-food-eaters"})
+	e.AddRoleForUser("italian-eaters", "admin7")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters", "european-food-eaters", "admin7"})
+	e.DeleteRoleForUser("fred", "pizza-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pasta-eaters"})
+	e.AddRoleForUser("fred", "pizza-eaters")
+	testGetRolesTransitive(t, e, "fred", []string{"pizza-eaters", "pasta-eaters", "italian-eaters", "european-food-eaters", "admin7"})
 }
 
 func TestGetPermissionsForUserNonTransitivity(t *testing.T) {

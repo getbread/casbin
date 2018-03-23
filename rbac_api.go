@@ -20,6 +20,30 @@ func (e *Enforcer) GetRolesForUser(name string) []string {
 	return res
 }
 
+// GetAllTransitiveRolesForUser gets the roles that a user has, including roles
+// which the user inherits / has transitively via a "role has another role".
+func (e *Enforcer) GetAllTransitiveRolesForUser(name string) []string {
+	// i.e. breadth first role search seeded with user's non-transitive roles.
+	rolesQueue := e.GetRolesForUser(name)
+	rolesSet := make(map[string]struct{})
+	for len(rolesQueue) > 0 {
+		var nextRole string
+		nextRole, rolesQueue = rolesQueue[0], rolesQueue[1:]
+		_, alreadyProcessedNextRole := rolesSet[nextRole]
+		if !alreadyProcessedNextRole {
+			rolesSet[nextRole] = struct{}{}
+			rolesQueue = append(rolesQueue, e.GetRolesForUser(nextRole)...)
+		}
+	}
+	roles := make([]string, len(rolesSet))
+	i := 0
+	for r := range rolesSet {
+		roles[i] = r
+		i++
+	}
+	return roles
+}
+
 // GetUsersForRole gets the users that has a role.
 func (e *Enforcer) GetUsersForRole(name string) []string {
 	res, _ := e.model["g"]["g"].RM.GetUsers(name)
