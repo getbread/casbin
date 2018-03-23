@@ -51,12 +51,33 @@ func testHasRole(t *testing.T, e *Enforcer, name string, role string, res bool) 
 	}
 }
 
-func TestGetRolesForUserTransitivity(t *testing.T) {
+func TestGetPermissionsForUserNonTransitivity(t *testing.T) {
 	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
 
-	// expect GetRolesForUser() to be non-transitive
+	// expect GetPermissionsForUser() to be non-transitive,
+	// i.e. exclude permissions inherited via roles the user has
+	e.AddPermissionForUser("pizza-eaters", "pizza", "eat")
+	testGetPermissions(t, e, "tim", [][]string{})
+	testEnforce(t, e, "tim", "pizza", "eat", false)
+	e.AddRoleForUser("tim", "pizza-eaters")
+	// Here we see that tim transitively has the permission
+	// ("pizza", "eat"), however GetPermissionsForUser("tim") excludes
+	// ("pizza", "eat") because it returns only tim's direct permissions.
+	testGetPermissions(t, e, "tim", [][]string{})
+	testEnforce(t, e, "tim", "pizza", "eat", true)
+	e.DeletePermissionForUser("pizza-eaters", "pizza", "eat")
+	testEnforce(t, e, "tim", "pizza", "eat", false)
+}
+
+func TestGetRolesForUserNonTransitivity(t *testing.T) {
+	e := NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
+
+	// expect GetRolesForUser() to be non-transitive, i.e. exclude
+	// roles which the user has by way of "role has another role"
+	e.AddPermissionForUser("pizza-eaters", "pizza", "eat")
+	testEnforce(t, e, "pizza-eaters", "pizza", "eat", true)
 	e.AddRoleForUser("developers", "pizza-eaters")
-	testGetRoles(t, e, "fred", []string{""})
+	testGetRoles(t, e, "fred", []string{})
 	testEnforce(t, e, "fred", "pizza", "eat", false)
 	e.AddRoleForUser("fred", "developers")
 	// Here we see that fred transitively has the role
@@ -64,7 +85,7 @@ func TestGetRolesForUserTransitivity(t *testing.T) {
 	// "pizza-eaters" because it returns only fred's direct roles.
 	testGetRoles(t, e, "fred", []string{"developers"})
 	testEnforce(t, e, "fred", "pizza", "eat", true)
-	e.RemoveRoleForUser("developers", "pizza-eaters")
+	e.DeleteRoleForUser("developers", "pizza-eaters")
 	testEnforce(t, e, "fred", "pizza", "eat", false)
 }
 
