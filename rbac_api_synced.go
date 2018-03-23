@@ -21,6 +21,12 @@ func (e *SyncedEnforcer) GetRolesForUser(name string) []string {
 	return e.Enforcer.GetRolesForUser(name)
 }
 
+func (e *SyncedEnforcer) GetAllTransitiveRolesForUserAsSet(name string) map[string]struct{} {
+	e.m.Lock()
+	defer e.m.Unlock()
+	return e.Enforcer.GetAllTransitiveRolesForUserAsSet(name)
+}
+
 func (e *SyncedEnforcer) GetAllTransitiveRolesForUser(name string) []string {
 	e.m.Lock()
 	defer e.m.Unlock()
