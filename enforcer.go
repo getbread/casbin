@@ -72,7 +72,7 @@ func NewEnforcer(params ...interface{}) *Enforcer {
 				e.InitWithAdapter(params[0].(string), params[1].(persist.Adapter))
 			}
 		} else {
-			_, isAdapter := params[1].(persist.Adapter) // params[1] may be both a string and an Adapter
+			_, isAdapter := params[1].(persist.Adapter) // params[1] may be both a string and an Adapter, e.g. StringPolicyAdapter
 			if !isAdapter && reflect.TypeOf(params[1]).Kind() == reflect.String {
 				panic("Invalid parameters for enforcer.")
 			} else {
